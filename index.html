@@ -11,6 +11,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Social Media Preview -->
+    <meta property="og:title" content="Podcreates" />
+    <meta property="og:description" content="High-impact YouTube thumbnails focused on clarity, emotion, and clickability." />
+    <meta property="og:image" content="/assets/logo.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Podcreates" />
+    <meta name="twitter:description" content="High-impact YouTube thumbnails focused on clarity, emotion, and clickability." />
+    <meta name="twitter:image" content="/assets/logo.png" />
 
   <script>
     tailwind = window.tailwind || {};
@@ -41,13 +50,18 @@
 
   <!-- Tailwind (after config) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/lightbox.js" defer></script>
 
   <style>
+    html { overflow-y: scroll; scrollbar-gutter: stable; }
+    body { padding-right: var(--sbw, 0px); cursor: default; }
+    #siteHeader { padding-right: var(--sbw, 0px); }
 
     /* Dark premium hero pill */
 .hero-pill-premium{
   background: rgba(10, 10, 14, .75); /* deeper base */
   border: 1px solid rgba(56,8,228,.35); /* subtle brand edge */
+  cursor: default;
 
   color: rgba(244,244,245,.95);
 
@@ -289,7 +303,10 @@ html, body {
 }
 
 html{ scroll-behavior: smooth; }
-:root { --header-h: 84px; }
+:root {
+  --header-h: 84px;
+  --thumb-radius: 24px;
+}
 section[id]{ scroll-margin-top: calc(var(--header-h) + 10px); }
 
 .hero-headline-glow{
@@ -389,14 +406,15 @@ section[id]{ scroll-margin-top: calc(var(--header-h) + 10px); }
 /* Scroll Reveal */
 .reveal-inner{
   opacity: 0;
-  transform: translateY(var(--reveal-y, 18px)) scale(0.985);
-  filter: none;
+  /* Atmospheric "flying in" start state */
+  transform: translateY(var(--reveal-y, 40px)) scale(var(--reveal-s, 0.97));
+  filter: blur(5px);
   transition:
-    opacity 680ms cubic-bezier(.16,1,.3,1),
-    transform 680ms cubic-bezier(.16,1,.3,1),
-    filter 680ms cubic-bezier(.16,1,.3,1);
+    opacity 850ms cubic-bezier(.16,1,.3,1),
+    transform 850ms cubic-bezier(.16,1,.3,1),
+    filter 850ms cubic-bezier(.16,1,.3,1);
   transition-delay: var(--reveal-delay, 0ms);
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
 }
 
 /* =========================
@@ -544,14 +562,21 @@ body::before{
 .thumb-card{
   position: relative;
   overflow: hidden;
-  border-radius: 16px; /* old: rounded-2xl (roughly 16px) */
-  background: #18181b; /* bg-zinc-900 */
+  border-radius: var(--thumb-radius);
+  background: transparent;
   text-align: left;
 
   transform: translateZ(0);
-  transition: transform 300ms ease-out, border-color 300ms ease-out, box-shadow 300ms ease-out;
-  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 300ms ease-out, border-color 300ms ease-out, box-shadow 850ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity, box-shadow;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+}
+
+.reveal-in .thumb-card {
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .thumb-card:hover{
@@ -567,9 +592,17 @@ body::before{
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: contain;
-  background: #09090b;
+  background: transparent;
   transform: none;
-  transition: none;
+  opacity: 0;
+  
+  /* Simplified to pure fade to let reveal-inner handle the "flight" */
+  transition: opacity 700ms cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: opacity;
+}
+
+.thumb-img.is-loaded {
+  opacity: 1;
 }
 
 /* Overlay — match old (opacity 0 -> 1, 300ms) */
@@ -587,6 +620,12 @@ body::before{
 
 .thumb-card:hover .thumb-overlay{ opacity: 0.7; }
 
+/* Hide original during lightbox to prevent "4 corners" ghosting */
+.thumb-card.is-opening {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
 .thumb-pill{
   position:absolute;
   right: 12px;
@@ -599,6 +638,19 @@ body::before{
   color: rgba(244, 244, 245, 0.963);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.297);
   pointer-events: none;
+
+  opacity: 0;
+  transform: translateY(8px);
+  transition: 
+    opacity 1000ms cubic-bezier(0.25, 1, 0.5, 1),
+    transform 1000ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition-delay: 150ms;
+}
+
+/* Sync pill with image load + add assembly lift */
+.thumb-img.is-loaded ~ .thumb-pill {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Reviews */
@@ -899,6 +951,11 @@ html, body { overflow-anchor: none; }
     opacity 160ms ease;
 }
 
+.thumb-card:active {
+  transform: translateY(-4px) scale(0.98);
+  transition: transform 0.1s ease;
+}
+
 .footer-icon:hover{
   transform: translateY(-1.5px);
   border-color: rgba(255,255,255,.16);
@@ -1053,12 +1110,14 @@ html, body { overflow-anchor: none; }
   height: 100%;
   object-fit: contain;
 
-  border-radius: 18px;
+  border-radius: var(--thumb-radius);
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(9,9,11,.85);
 
   opacity: 0;
-  transform: scale(.985) translateY(6px);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 
   transition:
     opacity 220ms ease,
@@ -1070,13 +1129,11 @@ html, body { overflow-anchor: none; }
 /* When shown and ready */
 #lightbox.show #lightboxImg:not(.is-loading){
   opacity: 1;
-  transform: scale(1) translateY(0);
 }
 
 /* Hide centered image until FLIP finishes */
 #lightboxImg.is-loading{
   opacity: 0 !important;
-  transform: scale(.985) translateY(6px) !important;
 }
 
 /* Close button */
@@ -1103,11 +1160,9 @@ html, body { overflow-anchor: none; }
   position: fixed;
   z-index: 10000;
 
-  border-radius: 18px;
+  border-radius: var(--thumb-radius);
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(9,9,11,.85);
-
+  background: #09090b;
   object-fit: contain;
 
   will-change: transform, opacity;
@@ -1154,10 +1209,9 @@ html, body { overflow-anchor: none; }
 </head>
 
 <body class="font-sans text-zinc-100 selection:bg-brand-500/30 selection:text-brand-50 min-h-screen flex flex-col">
-  <main class="flex-1">
 
     <!-- NAV -->
-    <header id="siteHeader" class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/60 backdrop-blur-sm">
+    <header id="siteHeader" class="fixed top-0 left-0 w-full z-50 border-b border-white/10 bg-zinc-950/85 backdrop-blur-md">
       <div id="headerInner" class="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-4">
         <a href="#home" class="flex items-center gap-3 justify-self-start">
           <div id="navLogo" class="h-9 w-9 rounded-full bg-white/5 ring-brand grid place-items-center border border-white/10 overflow-hidden">
@@ -1201,12 +1255,14 @@ html, body { overflow-anchor: none; }
       </div>
     </header>
 
+  <main class="flex-1 pt-[var(--header-h)]">
+
 <!-- HERO -->
 <section id="home" class="relative min-h-screen flex items-center justify-center px-4">
   <!-- pill -->
   <div class="absolute top-[calc(var(--header-h)+2px)] left-1/2 -translate-x-1/2 hero-pill">
   <p class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium
-           hero-pill-premium btn-glow overflow-visible reveal-inner"
+           hero-pill-premium btn-glow no-magnetic overflow-visible reveal-inner"
    style="--reveal-y: 18px;">
     <span class="live-dot"></span>
     Available for projects
@@ -1723,10 +1779,7 @@ html, body { overflow-anchor: none; }
 
           <!-- Email row -->
           <div class="flex items-center gap-3">
-            <a
-              href="mailto:podcreates.media@gmail.com?subject=Thumbnail%20Request"
-              class="inline-flex items-center gap-2 text-white hover:opacity-80 transition-opacity"
-              aria-label="Email podcreates">
+              <a href="https://mail.google.com/mail/?view=cm&fs=1&to=podcreates.media@gmail.com&su=Thumbnail%20Request" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-white hover:opacity-80 transition-opacity" aria-label="Email podcreates">
 
               <svg viewBox="0 0 24 24"
                    class="h-4 w-4 text-white"
@@ -1914,19 +1967,7 @@ function observeExistingReveals() {
 /* =========================
    ✅ Header reveal (uses same reveal system as pill)
 ========================= */
-function runHeaderReveal() {
-  const header = document.getElementById("siteHeader");
-  if (!header) return;
 
-  // Use the same reveal animation: add reveal-inner to header in HTML or via JS
-  // If you DID NOT add reveal-inner to the header in HTML, we add it here:
-  header.classList.add("reveal-inner");
-  header.style.setProperty("--reveal-y", "10px");
-
-  // Prime layout then reveal on next paint
-  header.getBoundingClientRect();
-  requestAnimationFrame(() => header.classList.add("reveal-in"));
-}
 
 /* =========================
    ✅ HERO: deterministic sequence
@@ -2003,294 +2044,7 @@ if (lastEl && line) {
   });
 }
 
-/* =========================
-   ✅ Lightbox + FLIP (no scroll reset)
-========================= */
-const lightbox = document.getElementById("lightbox");
-const lightboxImg = document.getElementById("lightboxImg");
-const lightboxClose = document.getElementById("lightboxClose");
-const lightboxFrame = document.getElementById("lightboxFrame");
-
-let lbBusy = false;
-let lastThumbEl = null;  // button.thumb-card
-let lastThumbImg = null; // img inside thumb
-let lastSrc = null;
-
-// ✅ Motion tuning
-const OPEN_MS = 620;            // smoother open
-const OPEN_EASE = "cubic-bezier(.16,1,.3,1)";
-
-const CLOSE_MS = 320;           // faster close
-const CLOSE_EASE = "cubic-bezier(.4,0,.2,1)";
-
-const OPEN_FADE_MS = 220;
-const CLOSE_FADE_MS = 120;
-
-function getRadiusPx(el, fallback = "18px") {
-  try {
-    const r = getComputedStyle(el).borderRadius;
-    return r && r !== "0px" ? r : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-// =========================
-// ✅ Scroll lock with ZERO layout change (no nudge)
-// =========================
-let __scrollLockOn = false;
-
-const __lockEvents = {
-  wheel: (e) => { if (__scrollLockOn) e.preventDefault(); },
-  touchmove: (e) => { if (__scrollLockOn) e.preventDefault(); },
-  keydown: (e) => {
-    if (!__scrollLockOn) return;
-    const keys = ["ArrowUp","ArrowDown","PageUp","PageDown","Home","End"," "];
-    if (keys.includes(e.key)) e.preventDefault();
-  }
-};
-
-function lockBodyScroll() {
-  if (__scrollLockOn) return;
-  __scrollLockOn = true;
-
-  window.addEventListener("wheel", __lockEvents.wheel, { passive: false });
-  window.addEventListener("touchmove", __lockEvents.touchmove, { passive: false });
-  window.addEventListener("keydown", __lockEvents.keydown, { passive: false });
-
-  document.documentElement.style.overscrollBehavior = "none";
-}
-
-function unlockBodyScroll() {
-  if (!__scrollLockOn) return;
-  __scrollLockOn = false;
-
-  window.removeEventListener("wheel", __lockEvents.wheel, { passive: false });
-  window.removeEventListener("touchmove", __lockEvents.touchmove, { passive: false });
-  window.removeEventListener("keydown", __lockEvents.keydown, { passive: false });
-
-  document.documentElement.style.overscrollBehavior = "";
-}
-
-function preload(src) {
-  return new Promise((resolve) => {
-    const im = new Image();
-    im.onload = () => resolve(true);
-    im.onerror = () => resolve(false);
-    im.src = src;
-  });
-}
-
-function showLightboxImageInstant(src) {
-  if (!lightboxImg) return;
-  lightboxImg.style.transition = "none";
-  lightboxImg.src = src;
-  lightboxImg.classList.remove("is-loading");
-  lightboxImg.getBoundingClientRect();
-  requestAnimationFrame(() => (lightboxImg.style.transition = ""));
-}
-
-async function openLightbox(src, fromEl) {
-  if (lbBusy) return;
-  lbBusy = true;
-
-  lastSrc = src;
-  lastThumbEl = fromEl || null;
-  lastThumbImg = fromEl?.querySelector("img") || null;
-
-  fromEl?.classList.add("is-opening");
-
-  if (!lightbox || !lightboxImg) {
-    fromEl?.classList.remove("is-opening");
-    lbBusy = false;
-    return;
-  }
-
-  // show overlay immediately
-  lightbox.classList.remove("hidden");
-  lightbox.classList.remove("closing");
-  lightbox.classList.add("show");
-  lockBodyScroll();
-
-  // hide centered image until flip finishes
-  lightboxImg.classList.add("is-loading");
-  lightboxImg.src = "";
-
-  // fallback if no thumb/frame
-  if (!lastThumbImg || !lightboxFrame) {
-    await preload(src);
-    showLightboxImageInstant(src);
-    fromEl?.classList.remove("is-opening");
-    lbBusy = false;
-    return;
-  }
-
-  // ensure thumb decoded (best effort)
-  try { await lastThumbImg.decode?.(); } catch {}
-
-  // preload full
-  await preload(src);
-
-  const start = lastThumbImg.getBoundingClientRect();
-  const end = lightboxFrame.getBoundingClientRect();
-
-  // create clone
-  const clone = document.createElement("img");
-  clone.id = "lbClone";
-  clone.src = lastThumbImg.currentSrc || lastThumbImg.src;
-
-  clone.style.borderRadius = getRadiusPx(lastThumbEl, "18px");
-  clone.style.overflow = "hidden";
-  clone.style.backfaceVisibility = "hidden";
-  clone.style.webkitBackfaceVisibility = "hidden";
-  clone.style.transformOrigin = "top left";
-
-  clone.style.position = "fixed";
-  clone.style.zIndex = "10000";
-  clone.style.left = Math.round(end.left) + "px";
-  clone.style.top = Math.round(end.top) + "px";
-  clone.style.width = Math.round(end.width) + "px";
-  clone.style.height = Math.round(end.height) + "px";
-
-  const dx = start.left - end.left;
-  const dy = start.top - end.top;
-  const sx = start.width / end.width;
-  const sy = start.height / end.height;
-
-  clone.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
-  clone.style.opacity = "1";
-
-  document.body.appendChild(clone);
-
-  // animate to center
-  clone.getBoundingClientRect();
-  requestAnimationFrame(() => {
-  clone.style.transition =
-    `transform ${OPEN_MS}ms ${OPEN_EASE}, opacity ${OPEN_FADE_MS}ms ease`;
-  clone.style.transform = "translate(0px, 0px) scale(1, 1)";
-});
-
-  let done = false;
-  const finish = () => {
-    if (done) return;
-    done = true;
-
-    showLightboxImageInstant(src);
-    requestAnimationFrame(() => clone.remove());
-
-    fromEl?.classList.remove("is-opening");
-    lbBusy = false;
-  };
-
-  clone.addEventListener("transitionend", (e) => {
-    if (e.propertyName !== "transform") return;
-    finish();
-  });
-
-  // safety timeout
-  setTimeout(finish, OPEN_MS + 60);
-}
-
-function closeLightbox() {
-  if (!lightbox || !lightboxImg || lbBusy) return;
-  lbBusy = true;
-
-  document.getElementById("lbClone")?.remove();
-
-  // fallback close (no thumb/frame)
-  if (!lastThumbImg || !lightboxFrame) {
-    lightbox.classList.add("closing");
-    lightbox.classList.remove("show");
-
-    setTimeout(() => {
-      lightboxImg.src = "";
-      lightbox.classList.remove("closing");
-      lightbox.classList.add("hidden");
-      unlockBodyScroll();
-      lbBusy = false;
-    }, 140);
-    return;
-  }
-
-  // measure while visible
-  const start = lightboxFrame.getBoundingClientRect();
-  const end = lastThumbImg.getBoundingClientRect();
-
-  // start closing overlay
-  lightbox.classList.add("closing");
-  lightbox.classList.remove("show");
-
-  // create clone at center
-  const clone = document.createElement("img");
-  clone.id = "lbClone";
-  clone.src = lightboxImg.currentSrc || lightboxImg.src || lastSrc || lastThumbImg.src;
-
-  clone.style.borderRadius = getRadiusPx(lastThumbEl, "18px");
-  clone.style.overflow = "hidden";
-  clone.style.backfaceVisibility = "hidden";
-  clone.style.webkitBackfaceVisibility = "hidden";
-  clone.style.transformOrigin = "top left";
-
-  clone.style.position = "fixed";
-  clone.style.zIndex = "10000";
-  clone.style.left = Math.round(start.left) + "px";
-  clone.style.top = Math.round(start.top) + "px";
-  clone.style.width = Math.round(start.width) + "px";
-  clone.style.height = Math.round(start.height) + "px";
-  clone.style.transform = "translate(0px,0px) scale(1,1)";
-  clone.style.opacity = "1";
-
-  document.body.appendChild(clone);
-
-  // hide center image immediately
-  lightboxImg.classList.add("is-loading");
-
-  // animate to thumb
-  const dx = end.left - start.left;
-  const dy = end.top - start.top;
-  const sx = +(end.width / start.width).toFixed(4);
-  const sy = +(end.height / start.height).toFixed(4);
-
-  clone.getBoundingClientRect();
-  requestAnimationFrame(() => {
-  clone.style.transition =
-    `transform ${CLOSE_MS}ms ${CLOSE_EASE}, opacity ${CLOSE_FADE_MS}ms ease`;
-  clone.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
-  clone.style.opacity = "0.96";
-});
-
-  let done = false;
-  const finish = () => {
-    if (done) return;
-    done = true;
-
-    clone.remove();
-    lightboxImg.src = "";
-    lightbox.classList.remove("closing");
-    lightbox.classList.add("hidden");
-    lastThumbEl?.classList.remove("is-opening");
-
-    unlockBodyScroll();
-    lbBusy = false;
-  };
-
-  clone.addEventListener("transitionend", (e) => {
-    if (e.propertyName !== "transform") return;
-    finish();
-  });
-
-  setTimeout(finish, CLOSE_MS + 60);
-}
-
-lightboxClose?.addEventListener("click", closeLightbox);
-
-lightbox?.addEventListener("click", (e) => {
-  if (!e.target.closest("#lightboxFrame")) closeLightbox();
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeLightbox();
-});
+// Lightbox functionality moved to assets/js/lightbox.js
 
 /* =========================
    Featured thumbs (best 6)
@@ -2304,7 +2058,7 @@ const featuredItems = [
   { src: "assets/thumbs/thumb2.jpg", category: "IRL" },
 ];
 
-function featuredCardTemplate(item, index) {
+function featuredCardTemplate(item, index, flowDelay = 0) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "thumb-card text-left focus:outline-none";
@@ -2312,7 +2066,8 @@ function featuredCardTemplate(item, index) {
 
   const inner = document.createElement("div");
   inner.className = "reveal-inner no-blur";
-  inner.style.setProperty("--reveal-delay", `${Math.min(index * 45, 260)}ms`);
+  // Perceptual "Flow" stagger (35ms * column position)
+  inner.style.setProperty("--reveal-delay", `${flowDelay}ms`);
 
   const img = document.createElement("img");
   img.src = item.src;
@@ -2320,6 +2075,10 @@ function featuredCardTemplate(item, index) {
   img.className = "thumb-img";
   img.loading = "lazy";
   img.decoding = "async";
+
+  // Smooth load fade
+  img.onload = () => img.classList.add("is-loaded");
+  if (img.complete) img.classList.add("is-loaded");
 
   const overlay = document.createElement("div");
   overlay.className = "thumb-overlay";
@@ -2329,9 +2088,9 @@ function featuredCardTemplate(item, index) {
   pill.textContent = item.category;
 
   inner.appendChild(img);
+  inner.appendChild(overlay);
+  inner.appendChild(pill);
   btn.appendChild(inner);
-  btn.appendChild(overlay);
-  btn.appendChild(pill);
 
   btn.addEventListener("click", () => openLightbox(item.src, btn));
   btn.addEventListener("keydown", (e) => {
@@ -2350,8 +2109,18 @@ function renderFeatured() {
   if (!featuredGrid) return;
 
   featuredGrid.innerHTML = "";
+  
+  // Bar-by-bar reveal (3 columns on desktop)
+  let cols = 3;
+  if (window.innerWidth < 640) cols = 1;
+  else if (window.innerWidth < 1024) cols = 2;
+
   const frag = document.createDocumentFragment();
-  featuredItems.forEach((item, i) => frag.appendChild(featuredCardTemplate(item, i)));
+  featuredItems.forEach((item, i) => {
+    const colIndex = i % cols;
+    const flowDelay = colIndex * 35; // 35ms tiny offset for "liquid" feel
+    frag.appendChild(featuredCardTemplate(item, i, flowDelay));
+  });
   featuredGrid.appendChild(frag);
 }
 
@@ -2590,15 +2359,80 @@ if (copyDiscordBtn) {
   });
 }
 
+  // =========================
+  // ✅ Magnetic Micro-interactions
+  // =========================
+  (() => {
+    const threshold = 40;
+    const power = 0.04;
+    document.addEventListener("pointermove", (e) => {
+      const items = document.querySelectorAll(".btn-glow:not(.no-magnetic)");
+      items.forEach(el => {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < threshold) {
+          const moveX = dx * power;
+          const moveY = dy * power;
+          el.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) scale(1.002)`;
+        } else {
+          el.style.transform = "";
+        }
+      });
+    }, { passive: true });
+  })();
+
 /* =========================
    Init
 ========================= */
-window.addEventListener("load", () => {
+/* =========================
+   ✅ Clean URL Navigation
+   (Intercepts #links to prevent hash in address bar)
+========================= */
+document.addEventListener("click", (e) => {
+  const link = e.target.closest('a[href*="#"]');
+  if (!link) return;
+
+  const url = new URL(link.href, window.location.origin);
+  if (url.pathname !== window.location.pathname && url.pathname !== "/index.html" && url.pathname !== "/") return;
+
+  const targetId = url.hash.slice(1);
+  if (!targetId) return;
+
+  const targetEl = document.getElementById(targetId);
+  if (!targetEl) return;
+
+  e.preventDefault();
+
+  // If we are navigating to home, we can just scroll to top
+  if (targetId === "home") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  // Calculate header offset
+  const header = document.getElementById("siteHeader");
+  const offset = header ? header.offsetHeight : 0;
+  const targetPos = targetEl.getBoundingClientRect().top + window.scrollY - offset;
+
+  // Smooth scroll manually
+  window.scrollTo({
+    top: targetPos,
+    behavior: "smooth"
+  });
+});
+
+  window.addEventListener("load", () => {
   observeExistingReveals();
   renderFeatured();
-  runHeaderReveal();  // ✅ header fades in like pill
+  observeExistingReveals();
+  renderFeatured();
   runHeroSequence();  // ✅ pill + both CTAs reveal identically
 });
 </script>
+</main>
 </body>
 </html>
