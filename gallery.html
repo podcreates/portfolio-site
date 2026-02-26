@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>podcreates — Gallery</title>
+  <meta name="description" content="Thumbnail gallery — filtered by niche." />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            brand: {
+              50:"#f4f0ff",100:"#e8ddff",200:"#cbb8ff",300:"#b093ff",400:"#967cf0",
+              500:"#3808e4",600:"#2f07c1",700:"#26069f",800:"#1d047d",900:"#14035b"
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+
+    #grid { overflow: visible; padding: 2px; }
+
+    html { overflow-y: scroll; scrollbar-gutter: stable; }
+body { padding-right: var(--sbw, 0px); }
+
+    /* Prevent page jump when filtering (scroll anchoring) */
+    html, body { overflow-anchor: none; }
+    #filtersWrap, #grid, #grid * { overflow-anchor: none; }
+
+    body { font-weight: 500; }
+    html, body {
+      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial !important;
+    }
+
+    body{
+      background: #07070b;
+      overflow-x: hidden;
+      position: relative;
+      color: #f4f4f5;
+    }
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .10;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 2px, transparent 4px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 2px, transparent 4px);
+    }
+
+    /* btn-glow (same behavior as index) */
+    .btn-glow{
+      --mx: 50%;
+      --my: 50%;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      transform: translateZ(0);
+    }
+    .btn-glow::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius: inherit;
+      pointer-events:none;
+      z-index: 0;
+      background:
+        radial-gradient(120px 80px at var(--mx) var(--my),
+          rgba(203, 184, 255, 0.075),
+          rgba(56, 8, 228, 0.032) 45%,
+          transparent 72%);
+      opacity: 0;
+      transition: opacity .16s ease;
+    }
+    .btn-glow::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      z-index:0;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.10) inset,
+        0 14px 50px rgba(56,8,228,.12);
+      opacity: 0;
+      transition: opacity .16s ease;
+    }
+    .btn-glow:hover::before,
+    .btn-glow:hover::after{ opacity: 1; }
+    .btn-glow > *{ position: relative; z-index: 1; }
+
+    .lets-create-edge{
+      border: 1.5px solid rgba(56,8,228,.85) !important;
+      box-shadow: 0 0 0 1px rgba(56,8,228,.55), 0 8px 28px rgba(56,8,228,.18);
+      transition: all .25s ease;
+    }
+    .lets-create-edge:hover{
+      box-shadow: 0 0 0 1px rgba(56,8,228,.8), 0 0 18px rgba(56,8,228,.35), 0 14px 45px rgba(56,8,228,.22);
+    }
+
+    /* Filter indicator + pills */
+    .filterBtn { border: 1px solid transparent; }
+    .filterBtn.text-white {
+      border: 1px solid #3808E4;
+      box-shadow: none;
+    }
+    #filtersWrap .filterBtn.btn-glow::after{
+      box-shadow: 0 0 0 1px rgba(56,8,228,.55) inset, 0 14px 50px rgba(56,8,228,.12);
+    }
+    #filtersWrap .filterBtn.btn-glow::before{
+      background: radial-gradient(120px 80px at var(--mx) var(--my),
+        rgba(56,8,228,.22),
+        rgba(56,8,228,.10) 45%,
+        transparent 72%);
+    }
+    #filtersWrap .filterBtn:focus,
+    #filtersWrap .filterBtn:focus-visible{
+      outline: none;
+      box-shadow: none;
+    }
+
+    /* Gallery grid (same breakpoints as index) */
+    .grid-auto { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    @media (max-width: 900px){ .grid-auto { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+    @media (max-width: 640px){ .grid-auto { grid-template-columns: 1fr; } }
+
+    /* allow hover transforms/shadows to render fully */
+    #grid { overflow: visible; }
+    #grid button { contain: layout; }
+
+    /* make hovered card render above neighbors */
+    .thumb-card { position: relative; }
+    .thumb-card:hover { z-index: 20; }
+
+    /* Thumbnails — EXACT old hover feel */
+.thumb-card{
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px; /* old: rounded-2xl (roughly 16px) */
+  background: #18181b; /* bg-zinc-900 */
+  text-align: left;
+
+  transform: translateZ(0);
+  transition: transform 300ms ease-out, border-color 300ms ease-out, box-shadow 300ms ease-out;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.thumb-card:hover{
+  transform: translateY(-4px) scale(1.035);
+}
+
+.thumb-card:active{
+  transform: translateY(0px) scale(1.01);   /* active:scale-[1.01] */
+}
+
+/* Image — match old (no hover zoom) */
+.thumb-img{
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #09090b;
+  transform: none;
+  transition: none;
+}
+
+/* Overlay — match old (opacity 0 -> 1, 300ms) */
+.thumb-overlay{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity 300ms;
+  background: linear-gradient(to top,
+    rgba(0,0,0,.70),
+    rgba(0,0,0,0) 60%
+  );
+}
+
+.thumb-card:hover .thumb-overlay{ opacity: 0.6; }
+
+    .thumb-pill{
+      position:absolute;
+      right: 12px;
+      bottom: 12px;
+      font-size: 11px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 10px;
+      color: rgba(244, 244, 245, 0.963);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.297);
+      pointer-events: none;
+    }
+
+    /* ✅ Freeze card hover transforms during FLIP so start rect doesn't move */
+.thumb-card.is-opening,
+.thumb-card.is-opening:hover{
+  transform: none !important;
+}
+
+.thumb-card.is-opening .thumb-img,
+.thumb-card.is-opening:hover .thumb-img{
+  transform: none !important;
+}
+
+    /* =========================
+       Scroll Reveal (same as index)
+       ========================= */
+    .reveal-inner{
+      opacity: 0;
+      transform: translateY(var(--reveal-y, 18px)) scale(0.985);
+      transition:
+        opacity 680ms cubic-bezier(.16,1,.3,1),
+        transform 680ms cubic-bezier(.16,1,.3,1);
+      transition-delay: var(--reveal-delay, 0ms);
+      will-change: transform, opacity;
+    }
+    .reveal-in{
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    @media (prefers-reduced-motion: reduce){
+      .reveal-inner{ transition: none; opacity: 1; transform: none; }
+    }
+
+    /* Remove blur ONLY for thumbnails */
+    .no-blur { filter: none !important; }
+    .no-blur.reveal-in { filter: none !important; }
+
+    /* =========================
+       ✅ LIGHTBOX + FLY (matches index)
+       ========================= */
+    #lightbox{
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+      will-change: opacity;
+
+      isolation: isolate;
+    }
+
+    /* Show state */
+    #lightbox.show{
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Overlay base */
+    #lightbox::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index: 0;
+      pointer-events:none;
+
+      background: radial-gradient(circle at center,
+        rgba(0,0,0,.55) 0%,
+        rgba(0,0,0,.78) 50%,
+        rgba(0,0,0,.92) 100%
+      );
+
+      opacity: 0;
+      transition: opacity 220ms ease;
+      will-change: opacity;
+    }
+
+    /* Normal open */
+    #lightbox.show::before{ opacity: 1; }
+
+    /* Closing: fade overlay out immediately */
+    #lightbox.closing::before{
+  opacity: 0;
+  transition-duration: 140ms; /* ✅ faster close fade */
+}
+
+    #lightboxInner{
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    #lightboxFrame{
+      width: min(1120px, calc(100vw - 40px));
+      aspect-ratio: 16 / 9;
+      max-height: min(90vh, calc(100vh - 110px));
+      height: auto;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    #lightboxImg{
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(9,9,11,.85);
+
+      opacity: 0;
+      transform: scale(.985) translateY(6px);
+
+      transition:
+  opacity 220ms ease,
+  transform 520ms cubic-bezier(.16,1,.3,1); /* ✅ smoother open */
+
+      will-change: transform, opacity;
+    }
+
+    /* When shown and ready */
+    #lightbox.show #lightboxImg:not(.is-loading){
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Hide real center image until FLIP finishes */
+    #lightboxImg.is-loading{
+      opacity: 0 !important;
+      transform: scale(.985) translateY(6px) !important;
+    }
+
+    /* Close button */
+    #lightboxClose{
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10000;
+      transition: opacity 160ms ease, transform 160ms ease;
+      will-change: opacity, transform;
+    }
+
+    /* Close button fades out during closing */
+    #lightbox.closing #lightboxClose{
+      opacity: 0;
+      transform: translateY(-6px) scale(.98);
+      pointer-events: none;
+    }
+
+    /* FLIP clone (flies in/out) */
+    /* FLIP clone (flies in/out) */
+#lbClone{
+  position: fixed;
+  z-index: 10000;
+
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(9,9,11,.85);
+
+  object-fit: contain;
+
+  will-change: transform, opacity;
+
+  /* ✅ JS sets per-open/per-close durations */
+  transition: none;
+
+  transform-origin: top left;
+
+  pointer-events: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+    /* Prevent double taps during open */
+    .thumb-card.is-opening{ pointer-events:none; }
+
+    /* reduced transparency */
+    @media (prefers-reduced-transparency: reduce){
+      header{ backdrop-filter:none !important; }
+    }
+  </style>
+</head>
+
+<body class="font-sans text-zinc-100 selection:bg-brand-500/30 selection:text-brand-50 min-h-screen flex flex-col">
+  <main class="flex-1">
+
+    <!-- NAV (same as index, links adapted for gallery page) -->
+    <header id="siteHeader" class="sticky top-0 z-50 border-b border-white/10 bg-zinc-950/60 backdrop-blur-sm">
+      <div id="headerInner" class="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-4">
+        <a href="index.html#home" class="flex items-center gap-3 justify-self-start">
+          <div id="navLogo" class="h-9 w-9 rounded-full bg-white/5 ring-brand grid place-items-center border border-white/10 overflow-hidden">
+            <img src="assets/favicon.png" alt="Logo" class="h-full w-full object-cover" />
+          </div>
+          <span class="font-medium tracking-tight">pod</span>
+        </a>
+
+        <nav id="navLinks" class="hidden md:flex items-center gap-7 justify-self-center">
+          <a class="text-sm text-zinc-300 hover:text-white" href="index.html#home">Home</a>
+          <a class="text-sm text-white" href="gallery.html">Gallery</a>
+          <a class="text-sm text-zinc-300 hover:text-white" href="index.html#reviews">Reviews</a>
+          <a class="text-sm text-zinc-300 hover:text-white" href="index.html#faq">FAQ</a>
+        </nav>
+
+        <a href="index.html#contact"
+           class="hidden md:inline-flex justify-self-end rounded-xl bg-brand-500/15 px-3 py-1.5 text-xs font-medium text-brand-100 hover:bg-brand-500/20 border btn-glow lets-create-edge">
+          Let’s Create
+        </a>
+
+        <button id="menuBtn"
+          class="md:hidden rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10 btn-glow justify-self-end"
+          aria-label="Open menu">
+          Menu
+        </button>
+      </div>
+
+      <div id="mobileMenu" class="md:hidden hidden border-t border-white/10 bg-zinc-950/95">
+        <div class="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-2">
+          <a class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white" href="index.html#home">Home</a>
+          <a class="rounded-lg px-3 py-2 text-white bg-white/5" href="gallery.html">Gallery</a>
+          <a class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white" href="index.html#reviews">Reviews</a>
+          <a class="rounded-lg px-3 py-2 text-zinc-300 hover:bg-white/5 hover:text-white" href="index.html#faq">FAQ</a>
+          <a href="index.html#contact"
+             class="rounded-lg px-3 py-2 font-medium text-brand-100 bg-brand-500/10 hover:bg-brand-500/15 border btn-glow lets-create-edge">
+            Let’s Create
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- PAGE HEADER -->
+    <section class="mx-auto max-w-7xl px-6 sm:px-8 pt-10 pb-6">
+      <div class="flex flex-col items-center text-center gap-2">
+        <h1 class="text-3xl md:text-4xl font-medium">Gallery</h1>
+        <p class="text-zinc-300 max-w-2xl">
+          Filter by niche to find exactly what you want.
+        </p>
+      </div>
+
+      <!-- Filters -->
+      <div class="mt-10 flex justify-center">
+        <div id="filtersWrap"
+             class="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 relative max-w-full overflow-x-auto">
+          <div id="filterIndicator"
+            class="absolute left-0 top-0 rounded-full bg-brand-500/20 border transition-all duration-300 ease-out"
+            style="border-color:#3808E4; width:0; height:0; transform:translate(0,0);"></div>
+
+          <button class="filterBtn btn-glow relative z-10 h-10 px-5 rounded-full text-sm text-zinc-200 hover:text-white whitespace-nowrap" data-filter="ALL">All</button>
+          <button class="filterBtn btn-glow relative z-10 h-10 px-5 rounded-full text-sm text-zinc-200 hover:text-white whitespace-nowrap" data-filter="IRL">IRL</button>
+          <button class="filterBtn btn-glow relative z-10 h-10 px-5 rounded-full text-sm text-zinc-200 hover:text-white whitespace-nowrap" data-filter="GAMING">Gaming</button>
+          <button class="filterBtn btn-glow relative z-10 h-10 px-5 rounded-full text-sm text-zinc-200 hover:text-white whitespace-nowrap" data-filter="DOCUMENTARY">Documentary</button>
+          <button class="filterBtn btn-glow relative z-10 h-10 px-5 rounded-full text-sm text-zinc-200 hover:text-white whitespace-nowrap" data-filter="FOOTBALL">Football</button>
+        </div>
+      </div>
+
+      <div class="mt-10 px-2 sm:px-3 pt-2">
+        <div id="grid" class="grid grid-auto gap-6"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- LIGHTBOX -->
+  <div id="lightbox" class="fixed inset-0 z-[9999]">
+    <button id="lightboxClose"
+      class="fixed right-4 top-4 z-[10000] rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm hover:bg-white/15 btn-glow">
+      Close
+    </button>
+
+    <div id="lightboxInner" class="mx-auto flex h-full w-full items-center justify-center">
+      <div id="lightboxFrame">
+        <img id="lightboxImg" alt="Preview" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // =========================
+  // ✅ Perf: delegated glow (1 listener + rAF)
+  // =========================
+  (() => {
+    let activeEl = null;
+    let raf = 0;
+    let lastEvent = null;
+
+    function update() {
+      raf = 0;
+      if (!activeEl || !lastEvent) return;
+      const r = activeEl.getBoundingClientRect();
+      const x = ((lastEvent.clientX - r.left) / r.width) * 100;
+      const y = ((lastEvent.clientY - r.top) / r.height) * 100;
+      activeEl.style.setProperty("--mx", x + "%");
+      activeEl.style.setProperty("--my", y + "%");
+    }
+
+    document.addEventListener(
+      "pointerover",
+      (e) => {
+        const el = e.target.closest?.(".btn-glow");
+        if (!el) return;
+        activeEl = el;
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "pointerout",
+      (e) => {
+        const el = e.target.closest?.(".btn-glow");
+        if (!el) return;
+        if (activeEl === el) {
+          el.style.setProperty("--mx", "50%");
+          el.style.setProperty("--my", "50%");
+          activeEl = null;
+          lastEvent = null;
+        }
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "pointermove",
+      (e) => {
+        if (!activeEl) return;
+        lastEvent = e;
+        if (!raf) raf = requestAnimationFrame(update);
+      },
+      { passive: true }
+    );
+  })();
+
+  // ===== Mobile menu (same behavior as index) =====
+  const menuBtn = document.getElementById("menuBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+  if (menuBtn && mobileMenu) {
+    menuBtn.addEventListener("click", () => mobileMenu.classList.toggle("hidden"));
+    mobileMenu.querySelectorAll("a").forEach((a) =>
+      a.addEventListener("click", () => mobileMenu.classList.add("hidden"))
+    );
+  }
+
+  // ===== Anchor offset var (for consistency) =====
+  function setHeaderOffset() {
+    const header = document.getElementById("siteHeader");
+    if (!header) return;
+    document.documentElement.style.setProperty("--header-h", header.offsetHeight + "px");
+  }
+  window.addEventListener("load", setHeaderOffset, { passive: true });
+  window.addEventListener("resize", setHeaderOffset, { passive: true });
+
+  // =========================
+  // ✅ Scroll reveal engine (same as index)
+  // =========================
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("reveal-in");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -10% 0px" }
+  );
+
+  function observeExistingReveals() {
+    document.querySelectorAll(".reveal-inner, .reveal-line").forEach((el) => revealObserver.observe(el));
+  }
+
+  // =========================
+  // ✅ Gallery items
+  // =========================
+  const items = [
+    { src: "assets/thumbs/thumb1.jpg", category: "GAMING" },
+    { src: "assets/thumbs/thumb2.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb3.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb4.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb24.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb25.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb5.jpg", category: "DOCUMENTARY" },
+    { src: "assets/thumbs/thumb6.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb22.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb7.jpg", category: "DOCUMENTARY" },
+    { src: "assets/thumbs/thumb8.jpg", category: "FOOTBALL" },
+    { src: "assets/thumbs/thumb9.jpg", category: "FOOTBALL" },
+    { src: "assets/thumbs/thumb10.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb11.jpg", category: "DOCUMENTARY" },
+    { src: "assets/thumbs/thumb23.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb12.jpg", category: "GAMING" },
+    { src: "assets/thumbs/thumb13.jpg", category: "GAMING" },
+    { src: "assets/thumbs/thumb15.jpg", category: "DOCUMENTARY" },
+    { src: "assets/thumbs/thumb16.jpg", category: "FOOTBALL" },
+    { src: "assets/thumbs/thumb17.jpg", category: "GAMING" },
+    { src: "assets/thumbs/thumb18.jpg", category: "FOOTBALL" },
+    { src: "assets/thumbs/thumb19.jpg", category: "DOCUMENTARY" },
+    { src: "assets/thumbs/thumb20.jpg", category: "DOCUMENTARY" },
+    { src: "assets/thumbs/thumb21.jpg", category: "FOOTBALL" },
+    { src: "assets/thumbs/thumb26.jpg", category: "IRL" },
+    { src: "assets/thumbs/thumb14.jpg", category: "IRL" },
+  ];
+
+  const grid = document.getElementById("grid");
+  const indicator = document.getElementById("filterIndicator");
+  const filterBtns = Array.from(document.querySelectorAll(".filterBtn"));
+
+  // =========================
+  // ✅ Lightbox (FLIP like index)
+  // =========================
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightboxImg");
+  const lightboxClose = document.getElementById("lightboxClose");
+  const lightboxFrame = document.getElementById("lightboxFrame");
+
+  let lbBusy = false;
+  let lastThumbEl = null; // button.thumb-card
+  let lastThumbImg = null; // img inside it
+  let lastSrc = null;
+
+  // ✅ Motion tuning
+const OPEN_MS = 620;
+const OPEN_EASE = "cubic-bezier(.16,1,.3,1)";
+const OPEN_FADE_MS = 220;
+
+const CLOSE_MS = 320;
+const CLOSE_EASE = "cubic-bezier(.4,0,.2,1)";
+const CLOSE_FADE_MS = 120;
+
+  function getRadiusPx(el, fallback = "18px") {
+    try {
+      const r = getComputedStyle(el).borderRadius;
+      return r && r !== "0px" ? r : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  let __sbw = 0;
+
+// =========================
+// ✅ Scroll lock with ZERO layout change (no nudge)
+// =========================
+let __scrollLockOn = false;
+
+const __lockEvents = {
+  wheel: (e) => { if (__scrollLockOn) e.preventDefault(); },
+  touchmove: (e) => { if (__scrollLockOn) e.preventDefault(); },
+  keydown: (e) => {
+    if (!__scrollLockOn) return;
+    // block scroll keys while lightbox open
+    const keys = ["ArrowUp","ArrowDown","PageUp","PageDown","Home","End"," "];
+    if (keys.includes(e.key)) e.preventDefault();
+  }
+};
+
+function lockBodyScroll() {
+  if (__scrollLockOn) return;
+  __scrollLockOn = true;
+
+  // prevent scrolling without changing layout
+  window.addEventListener("wheel", __lockEvents.wheel, { passive: false });
+  window.addEventListener("touchmove", __lockEvents.touchmove, { passive: false });
+  window.addEventListener("keydown", __lockEvents.keydown, { passive: false });
+
+  // optional: stop iOS "rubber band" behind overlay
+  document.documentElement.style.overscrollBehavior = "none";
+}
+
+function unlockBodyScroll() {
+  if (!__scrollLockOn) return;
+  __scrollLockOn = false;
+
+  window.removeEventListener("wheel", __lockEvents.wheel, { passive: false });
+  window.removeEventListener("touchmove", __lockEvents.touchmove, { passive: false });
+  window.removeEventListener("keydown", __lockEvents.keydown, { passive: false });
+
+  document.documentElement.style.overscrollBehavior = "";
+}
+
+  function preloadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+  }
+
+  function showLightboxImageInstant(src) {
+    if (!lightboxImg) return;
+    lightboxImg.style.transition = "none";
+    lightboxImg.src = src;
+    lightboxImg.classList.remove("is-loading");
+    lightboxImg.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      lightboxImg.style.transition = "";
+    });
+  }
+
+  async function openLightbox(src, fromEl) {
+    if (lbBusy) return;
+    lbBusy = true;
+
+    lastSrc = src;
+    lastThumbEl = fromEl || null;
+    lastThumbImg = fromEl?.querySelector("img") || null;
+    fromEl?.classList.add("is-opening");
+
+    if (!lightbox || !lightboxImg) {
+      fromEl?.classList.remove("is-opening");
+      lbBusy = false;
+      return;
+    }
+
+    // show overlay immediately (fade in)
+    lightbox.classList.remove("hidden");
+    lightbox.classList.remove("closing");
+    lightbox.classList.add("show");
+    lockBodyScroll();
+
+    // hide real center image until FLIP ends
+    lightboxImg.classList.add("is-loading");
+    lightboxImg.src = "";
+
+    const thumbImg = lastThumbImg;
+
+    // If no thumb/frame, fallback to normal fade in
+    if (!thumbImg || !lightboxFrame) {
+      const ok = await preloadImage(src);
+      lightboxImg.src = src;
+      try {
+        await lightboxImg.decode();
+      } catch {}
+      lightboxImg.classList.remove("is-loading");
+      fromEl?.classList.remove("is-opening");
+      lbBusy = false;
+      if (!ok) console.warn("Lightbox image failed to load:", src);
+      return;
+    }
+
+    // Ensure thumb decoded (best effort)
+    try {
+      await thumbImg.decode?.();
+    } catch {}
+
+    // Preload full before ending FLIP
+    const full = new Image();
+    full.src = src;
+    try {
+      await full.decode();
+    } catch {}
+
+    // Measure start/end
+    const start = thumbImg.getBoundingClientRect();
+    const end = lightboxFrame.getBoundingClientRect();
+
+    // Create clone starting at END rect, but transformed back to start (FLIP)
+    const clone = document.createElement("img");
+    clone.id = "lbClone";
+    clone.src = thumbImg.currentSrc || thumbImg.src;
+
+    // ✅ prevents “square” flash
+    clone.style.borderRadius = getRadiusPx(fromEl, "18px");
+    clone.style.overflow = "hidden";
+
+    clone.style.left = Math.round(end.left) + "px";
+    clone.style.top = Math.round(end.top) + "px";
+    clone.style.width = Math.round(end.width) + "px";
+    clone.style.height = Math.round(end.height) + "px";
+
+    const dx = Math.round(start.left - end.left);
+    const dy = Math.round(start.top - end.top);
+    const sx = start.width / end.width;
+    const sy = start.height / end.height;
+
+    clone.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+    clone.style.opacity = "1";
+
+    document.body.appendChild(clone);
+
+    // animate to identity
+    clone.getBoundingClientRect();
+requestAnimationFrame(() => {
+  clone.classList.add("settle");
+  clone.style.transition =
+    `transform ${OPEN_MS}ms ${OPEN_EASE}, opacity ${OPEN_FADE_MS}ms ease`;
+  clone.style.transform = "translate(0px, 0px) scale(1, 1)";
+});
+
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+
+      showLightboxImageInstant(src);
+      requestAnimationFrame(() => clone.remove());
+
+      fromEl?.classList.remove("is-opening");
+      lbBusy = false;
+    };
+
+    clone.addEventListener("transitionend", (e) => {
+      if (e.propertyName !== "transform") return;
+      finish();
+    });
+
+    setTimeout(finish, OPEN_MS + 60);
+  }
+
+  function closeLightbox() {
+    if (!lightbox || !lightboxImg || lbBusy) return;
+    lbBusy = true;
+
+    document.getElementById("lbClone")?.remove();
+
+    // Fallback if no thumb/frame: just fade
+    if (!lastThumbImg || !lightboxFrame) {
+      lightbox.classList.add("closing");
+      lightbox.classList.remove("show");
+
+      setTimeout(() => {
+        lightboxImg.src = "";
+        lightbox.classList.remove("closing");
+        lightbox.classList.add("hidden");
+        unlockBodyScroll();
+        lbBusy = false;
+      }, 140);
+
+      return;
+    }
+
+    // Measure while visible
+    const start = lightboxFrame.getBoundingClientRect();
+    const end = lastThumbImg.getBoundingClientRect();
+
+    // Start closing UI (keep scroll locked until end)
+    lightbox.classList.add("closing");
+    lightbox.classList.remove("show");
+
+    // Create clone at center rect
+    const clone = document.createElement("img");
+    clone.id = "lbClone";
+    clone.src = lightboxImg.currentSrc || lightboxImg.src || lastSrc || lastThumbImg.src;
+
+    // ✅ keep rounded during close too
+    clone.style.borderRadius = getRadiusPx(lastThumbEl, "18px");
+    clone.style.overflow = "hidden";
+
+    clone.style.left = Math.round(start.left) + "px";
+    clone.style.top = Math.round(start.top) + "px";
+    clone.style.width = Math.round(start.width) + "px";
+    clone.style.height = Math.round(start.height) + "px";
+    clone.style.transform = "translate(0px, 0px) scale(1, 1)";
+    clone.style.opacity = "1";
+
+    document.body.appendChild(clone);
+
+    // Hide real center image immediately
+    lightboxImg.classList.add("is-loading");
+
+    // Animate back to thumb
+    const dx = Math.round(end.left - start.left);
+    const dy = Math.round(end.top - start.top);
+    const sx = +(end.width / start.width).toFixed(4);
+    const sy = +(end.height / start.height).toFixed(4);
+
+    clone.getBoundingClientRect();
+requestAnimationFrame(() => {
+  clone.style.transition =
+    `transform ${CLOSE_MS}ms ${CLOSE_EASE}, opacity ${CLOSE_FADE_MS}ms ease`;
+  clone.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+  clone.style.opacity = "0.96";
+});
+
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+
+      clone.remove();
+      lightboxImg.src = "";
+      lightbox.classList.remove("closing");
+      lightbox.classList.add("hidden");
+      lastThumbEl?.classList.remove("is-opening");
+
+      unlockBodyScroll();
+      lbBusy = false;
+    };
+
+    clone.addEventListener("transitionend", (e) => {
+      if (e.propertyName !== "transform") return;
+      finish();
+    });
+
+    setTimeout(finish, CLOSE_MS + 60);
+  }
+
+  lightboxClose?.addEventListener("click", closeLightbox);
+
+  lightbox?.addEventListener("click", (e) => {
+    const inner = document.getElementById("lightboxInner");
+    if (e.target === lightbox || e.target === inner) closeLightbox();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeLightbox();
+  });
+
+  // =========================
+  // ✅ Cards + render (with reveal like index)
+  // =========================
+  function cardTemplate(item, index) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "thumb-card text-left focus:outline-none";
+    btn.setAttribute("aria-label", `Open thumbnail (${item.category})`);
+
+    // ✅ reveal wrapper (same concept as index)
+    const inner = document.createElement("div");
+    inner.className = "reveal-inner no-blur";
+    inner.style.setProperty("--reveal-delay", `${Math.min(index * 35, 260)}ms`);
+
+    const img = document.createElement("img");
+    img.src = item.src;
+    img.alt = "Thumbnail";
+    img.className = "thumb-img";
+    img.loading = "lazy";
+    img.decoding = "async";
+
+    const overlay = document.createElement("div");
+    overlay.className = "thumb-overlay";
+
+    const pill = document.createElement("div");
+    pill.className = "thumb-pill";
+    pill.textContent = item.category;
+
+    inner.appendChild(img);
+    btn.appendChild(inner);
+    btn.appendChild(overlay);
+    btn.appendChild(pill);
+
+    btn.addEventListener("click", () => openLightbox(item.src, btn));
+    btn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openLightbox(item.src, btn);
+      }
+    });
+
+    // observe reveal for this card
+    revealObserver.observe(inner);
+
+    return btn;
+  }
+
+  function render(filter = "ALL") {
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    const filtered = filter === "ALL" ? items : items.filter((i) => i.category === filter);
+    const frag = document.createDocumentFragment();
+    filtered.forEach((item, idx) => frag.appendChild(cardTemplate(item, idx)));
+    grid.appendChild(frag);
+  }
+
+  // =========================
+  // ✅ Filter indicator
+  // =========================
+  function moveIndicatorTo(btn) {
+    if (!indicator) return;
+    indicator.style.width = btn.offsetWidth + "px";
+    indicator.style.height = btn.offsetHeight + "px";
+    indicator.style.transform = `translate(${btn.offsetLeft}px, ${btn.offsetTop}px)`;
+  }
+
+  function setActiveFilterBtn(btn) {
+    filterBtns.forEach((b) => b.classList.remove("text-white"));
+    btn.classList.add("text-white");
+    moveIndicatorTo(btn);
+  }
+
+  // =========================
+  // ✅ Init
+  // =========================
+  window.addEventListener("load", () => {
+    observeExistingReveals();
+
+    const allBtn = filterBtns.find((b) => b.dataset.filter === "ALL") || filterBtns[0];
+    if (allBtn) setActiveFilterBtn(allBtn);
+    render("ALL");
+
+    window.addEventListener(
+      "resize",
+      () => {
+        const active = document.querySelector(".filterBtn.text-white") || allBtn;
+        if (active) moveIndicatorTo(active);
+      },
+      { passive: true }
+    );
+  });
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setActiveFilterBtn(btn);
+      render(btn.dataset.filter);
+    });
+  });
+</script>
+</body>
+</html>
