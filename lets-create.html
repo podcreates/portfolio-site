@@ -251,22 +251,22 @@
     }
 
     /* Compact shell to fit viewport */
-    .form-shell{ padding: 18px; }
+    .form-shell{ padding: 16px; }
     @media (min-width: 640px){ .form-shell{ padding: 22px; } }
 
     .form-label{
       display:block;
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: .02em;
       color: rgba(244,244,245,.78);
-      margin-bottom: 7px;
+      margin-bottom: 5px;
     }
 
     .field{
       background: rgba(255,255,255,.028);
       border: 1px solid rgba(255,255,255,.085);
-      border-radius: 16px;
-      padding: 10px 12px;
+      border-radius: 12px;
+      padding: 8px 12px;
       outline: none;
       width: 100%;
       color: rgba(244,244,245,1);
@@ -387,7 +387,7 @@
 
     /* Smaller textarea, fixed size */
 .message-box{
-  min-height: 120px !important;
+  min-height: 80px !important;
   resize: none;          /* prevents dragging to resize */
 }
 
@@ -459,13 +459,13 @@
 </div>
 
           <!-- Right -->
-          <div class="space-y-6">
+          <div class="space-y-4">
             <div class="glass rounded-3xl form-shell w-full">
               <form
                 id="letsCreateForm"
                 action="https://formspree.io/f/mlgwoedd"
                 method="POST"
-                class="space-y-4"
+                class="space-y-3"
               >
                 <!-- Honeypot -->
                 <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" />
@@ -525,11 +525,11 @@
                 <!-- Subject -->
                 <input type="hidden" name="_subject" value="New Let’s Create submission (podcreates)" />
 
-                <div class="flex justify-center pt-4">
+                <div class="flex justify-center pt-2">
                   <button
                     id="submitBtn"
                     type="submit"
-                    class="inline-flex items-center justify-center rounded-2xl px-8 h-[50px]
+                    class="inline-flex items-center justify-center rounded-2xl px-8 h-[44px]
                            bg-brand-500 text-white font-medium
                            border border-white/10
                            hover:opacity-95 disabled:opacity-60 disabled:cursor-not-allowed
