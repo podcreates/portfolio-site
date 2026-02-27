@@ -14,12 +14,12 @@
     <!-- Social Media Preview -->
     <meta property="og:title" content="Podcreates" />
     <meta property="og:description" content="High-impact YouTube thumbnails focused on clarity, emotion, and clickability." />
-    <meta property="og:image" content="/assets/logo.png" />
+    <meta property="og:image" content="/assets/previewimage.png" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Podcreates" />
     <meta name="twitter:description" content="High-impact YouTube thumbnails focused on clarity, emotion, and clickability." />
-    <meta name="twitter:image" content="/assets/logo.png" />
+    <meta name="twitter:image" content="/assets/previewimage.png" />
 
   <script>
     tailwind = window.tailwind || {};
@@ -698,15 +698,15 @@ body::before{
 }
 @media (max-width: 640px){
   .reviews-wrap{
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 26%, #000 74%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 26%, #000 74%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
   }
-  .reviews-wrap::before{ inset:-60px; filter: blur(14px); }
+  .reviews-wrap::before{ inset:-40px; filter: blur(24px); }
 }
 
-@keyframes marqueeLeft { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes marqueeLeft { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
 .marquee-track{
-  display:flex; width:max-content; gap:18px; padding:10px 0;
+  display:flex; width:max-content; gap:18px; padding:10px 18px 10px 0;
   will-change: transform;
   animation: marqueeLeft 42s linear infinite;
   position:relative; z-index:7;
@@ -856,10 +856,10 @@ body::before{
 .faq-item{
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.02);
-  border-radius: 9999px;
+  border-radius: 34px;
   overflow: hidden;
   box-sizing: border-box;
-  transition: border-radius 520ms cubic-bezier(.22,1,.36,1);
+  transition: border-radius 650ms cubic-bezier(.22,1,.36,1);
   will-change: height, border-radius;
 }
 .faq-item.is-open{ border-radius: 22px; }
@@ -1340,7 +1340,7 @@ html, body { overflow-anchor: none; }
 
     <!-- STATS -->
     <section id="stats" class="section-block mx-auto max-w-5xl px-4">
-      <div class="grid gap-6 md:gap-8 md:grid-cols-3 text-center items-center">
+      <div class="grid gap-10 md:gap-8 md:grid-cols-3 text-center items-center">
 
         <div class="group stat-pop">
           <img src="assets/work.png" alt="Experience Icon"
@@ -2050,11 +2050,11 @@ if (lastEl && line) {
    Featured thumbs (best 6)
 ========================= */
 const featuredItems = [
-  { src: "assets/thumbs/thumb1.jpg", category: "GAMING" },
+  { src: "assets/thumbs/thumb6.jpg", category: "IRL" },
   { src: "assets/thumbs/thumb3.jpg", category: "IRL" },
   { src: "assets/thumbs/thumb25.jpg", category: "IRL" },
-  { src: "assets/thumbs/thumb23.jpg", category: "IRL" },
   { src: "assets/thumbs/thumb5.jpg", category: "DOCUMENTARY" },
+  { src: "assets/thumbs/thumb24.jpg", category: "IRL" },
   { src: "assets/thumbs/thumb2.jpg", category: "IRL" },
 ];
 
@@ -2162,7 +2162,7 @@ function renderFeatured() {
 
   function freezeHeight(el) {
     const h = el.getBoundingClientRect().height;
-    el.style.transition = "none";
+    el.style.transitionProperty = "height";
     el.style.height = h + "px";
     el.offsetHeight;
   }
@@ -2174,16 +2174,16 @@ function renderFeatured() {
 
   function measureAutoHeight(item) {
     const prevH = item.style.height;
-    const prevT = item.style.transition;
+    const prevT = item.style.transitionProperty;
 
-    item.style.transition = "none";
+    item.style.transitionProperty = "none";
     item.style.height = "auto";
     item.offsetHeight;
 
     const h = item.getBoundingClientRect().height;
 
     item.style.height = prevH;
-    item.style.transition = prevT;
+    item.style.transitionProperty = prevT;
     item.offsetHeight;
 
     return h;
@@ -2208,7 +2208,7 @@ function renderFeatured() {
     const handler = (e) => {
       if (e.propertyName !== "height") return;
       item.removeEventListener("transitionend", handler);
-      item.style.transition = "";
+      item.style.transitionProperty = "";
       onDone && onDone();
     };
     item.addEventListener("transitionend", handler);
@@ -2245,12 +2245,17 @@ function renderFeatured() {
 
     setExpanded(summary, false);
     freezeHeight(item);
+    
+    // Slight delay before removing is-open provides a smoother visual transition
+    // while the height begins to animate
+    requestAnimationFrame(() => {
+        item.classList.remove("is-open");
+    });
 
     const target = closedHeight(item);
 
     animateHeight(item, target, () => {
       item.open = false;
-      item.classList.remove("is-open");
     });
 
     setTimeout(() => {
@@ -2295,7 +2300,7 @@ function renderFeatured() {
         freezeHeight(item);
         if (item.open) item.style.height = measureAutoHeight(item) + "px";
         else item.style.height = closedHeight(item) + "px";
-        item.style.transition = "";
+        item.style.transitionProperty = "";
       });
     },
     { passive: true }
@@ -2392,6 +2397,10 @@ if (copyDiscordBtn) {
    ✅ Clean URL Navigation
    (Intercepts #links to prevent hash in address bar)
 ========================= */
+if (window.location.hash === '#home') {
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+}
+
 document.addEventListener("click", (e) => {
   const link = e.target.closest('a[href*="#"]');
   if (!link) return;

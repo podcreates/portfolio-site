@@ -122,6 +122,13 @@
     }
 
     /* Filter indicator + pills */
+    #filtersWrap {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;  /* IE and Edge */
+    }
+    #filtersWrap::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
     .filterBtn { border: 1px solid transparent; }
     .filterBtn.text-white {
       border: 1px solid #3808E4;
@@ -448,7 +455,7 @@
     <!-- NAV -->
     <header id="siteHeader" class="fixed top-0 left-0 w-full z-50 border-b border-white/10 bg-zinc-950/85 backdrop-blur-md">
       <div id="headerInner" class="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-4">
-        <a href="index.html#home" class="flex items-center gap-3 justify-self-start">
+        <a href="index.html" class="flex items-center gap-3 justify-self-start">
           <div id="navLogo" class="h-9 w-9 rounded-full bg-white/5 ring-brand grid place-items-center border border-white/10 overflow-hidden">
             <img src="assets/favicon.png" alt="Logo" class="h-full w-full object-cover" />
           </div>
@@ -458,7 +465,7 @@
         <!-- center column placeholder to match index layout -->
         <div class="hidden md:block justify-self-center"></div>
 
-        <a href="index.html#home"
+        <a href="index.html"
            class="justify-self-end rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-white/10 btn-glow no-magnetic">
           Back to site
         </a>
@@ -660,6 +667,7 @@
     { src: "assets/thumbs/thumb19.jpg", category: "DOCUMENTARY" },
     { src: "assets/thumbs/thumb20.jpg", category: "DOCUMENTARY" },
     { src: "assets/thumbs/thumb21.jpg", category: "FOOTBALL" },
+    { src: "assets/thumbs/thumb27.jpg", category: "FOOTBALL" },
     { src: "assets/thumbs/thumb26.jpg", category: "IRL" },
     { src: "assets/thumbs/thumb14.jpg", category: "IRL" },
   ];
