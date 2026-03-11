@@ -276,6 +276,10 @@ function closeLightbox() {
       if (window.lastThumbEl) {
         window.lastThumbEl.classList.remove("is-opening");
       }
+      // ✅ CLEAR STATE: prevent "ghost" hidden thumbnails during next filter/render
+      window.lastSrc = null;
+      window.lastThumbEl = null;
+      window.lastThumbImg = null;
     });
 
     unlockBodyScroll();
